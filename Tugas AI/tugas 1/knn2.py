@@ -1,40 +1,51 @@
 # -*- coding: utf-8 -*-
 import pandas as pd
+import numpy as np
 import streamlit as st
 from sklearn.model_selection import train_test_split
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.metrics import accuracy_score
 
-st.title("KNN - Teen Mental Health Dataset")
+st.set_page_config(page_title="KNN - Teen Mental Health", layout="centered")
 
-uploaded_file = st.file_uploader("Upload file CSV", type=["csv"])
+@st.cache_data
+def load_data():
+    url = "https://raw.githubusercontent.com/verrelshafryhermawan-boop/Tugas-AI/refs/heads/main/Teen_Mental_Health_Dataset.csv"
+    df = pd.read_csv(url)
+    return df
 
-if uploaded_file is None:
-    st.warning("Silakan upload file Teen_Mental_Health_Dataset.csv")
-    st.stop()
+@st.cache_data
+def train_model(df):
+    features = ['age', 'daily_social_media_hours', 'sleep_hours', 'stress_level', 'anxiety_level']
+    X = df[features]
+    y = df['depression_label']
+    X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42)
+    model = KNeighborsClassifier(n_neighbors=5)
+    model.fit(X_train, y_train)
+    accuracy = accuracy_score(y_test, model.predict(X_test)) * 100
+    return model, accuracy
 
-st.success("File ditemukan! Memproses data...")
+def main():
+    st.title("🧠 Aplikasi Klasifikasi Kesehatan Mental Remaja")
+    st.write("Masukkan nilai fitur berikut untuk memprediksi tingkat depresi:")
 
-# Membaca data
-df = pd.read_csv(uploaded_file)
+    df = load_data()
+    model, accuracy = train_model(df)
 
-# Persiapan Data
-features = ['age', 'daily_social_media_hours', 'sleep_hours', 'stress_level', 'anxiety_level']
-X = df[features]
-y = df['depression_label']
+    age = st.slider("Umur", int(df.age.min()), int(df.age.max()), int(df.age.mean()))
+    social_media = st.slider("Jam Media Sosial per Hari", float(df.daily_social_media_hours.min()), float(df.daily_social_media_hours.max()), float(df.daily_social_media_hours.mean()))
+    sleep = st.slider("Jam Tidur per Hari", float(df.sleep_hours.min()), float(df.sleep_hours.max()), float(df.sleep_hours.mean()))
+    stress = st.slider("Tingkat Stres (1-10)", int(df.stress_level.min()), int(df.stress_level.max()), int(df.stress_level.mean()))
+    anxiety = st.slider("Tingkat Kecemasan (1-10)", int(df.anxiety_level.min()), int(df.anxiety_level.max()), int(df.anxiety_level.mean()))
 
-# Membagi data
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42
-)
+    if st.button("Prediksi"):
+        input_data = np.array([[age, social_media, sleep, stress, anxiety]])
+        prediction = model.predict(input_data)[0]
+        st.success(f"🧬 Prediksi: **{prediction}**")
+        st.info(f"Akurasi model pada data uji: {accuracy:.2f}%")
 
-# Model KNN
-model = KNeighborsClassifier(n_neighbors=5)
-model.fit(X_train, y_train)
+    if st.checkbox("Tampilkan Dataset"):
+        st.dataframe(df)
 
-# Hasil
-y_pred = model.predict(X_test)
-akurasi = accuracy_score(y_test, y_pred) * 100
-
-st.write("### Hasil Model KNN")
-st.metric(label="Akurasi Model", value=f"{akurasi:.2f}%")
+if __name__ == "__main__":
+    main()
