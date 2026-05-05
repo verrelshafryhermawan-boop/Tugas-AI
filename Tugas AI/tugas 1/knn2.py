@@ -8,25 +8,23 @@ Original file is located at
 """
 
 import pandas as pd
-import os
-from google.colab import files
-from sklearn.model_selection import train_test_split
-from sklearn.neighbors import KNeighborsClassifier
-from sklearn.metrics import accuracy_score
+import streamlit as st
 
-# --- BAGIAN OTOMATIS UPLOAD ---
-file_name = 'Teen_Mental_Health_Dataset.csv'
+st.title("KNN - Teen Mental Health Dataset")
 
-if not os.path.exists(file_name):
-    print("File belum ditemukan di folder Colab.")
-    print("Silakan klik tombol 'Choose Files' di bawah ini untuk upload file:")
-    uploaded = files.upload()
+uploaded_file = st.file_uploader("Upload file CSV", type=["csv"])
+
+if uploaded_file is None:
+    st.warning("Silakan upload file Teen_Mental_Health_Dataset.csv")
+    st.stop()
+
+st.success("File ditemukan! Memproses data...")
 else:
     print("File ditemukan! Memproses data...")
 
 # --- BAGIAN MACHINE LEARNING ---
 # Membaca data
-df = pd.read_csv(file_name)
+df = pd.read_csv(uploaded_file)
 
 # Persiapan Data
 features = ['age', 'daily_social_media_hours', 'sleep_hours', 'stress_level', 'anxiety_level']
